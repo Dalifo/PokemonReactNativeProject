@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import AppNavigator from "./src/navigation/Navigation"; // Assurez-vous que le chemin est correct
+import AppNavigator from "./src/navigation/Navigation";
 
 const queryClient = new QueryClient();
 

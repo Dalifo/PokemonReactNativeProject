@@ -1,6 +1,7 @@
 // useGetAllCards.tsx
 import { useQuery } from "@tanstack/react-query";
 import { ApiClient } from "../api";
+import { TypeColors } from "../utils/typeUtils";
 
 export type Card = {
   pokedexId: number;
@@ -20,7 +21,7 @@ export type Card = {
     } | null;
   };
   types: {
-    name: string;
+    name: keyof TypeColors;
     image: string;
   }[];
   talents: {
