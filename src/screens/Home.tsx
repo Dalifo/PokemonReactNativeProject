@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function App() {
@@ -13,9 +13,9 @@ export default function App() {
     <View style={styles.container}>
       <Image style={styles.title} source={require('../assets/title.png')} />
       <Image style={styles.backgroundpoke} source={require('../assets/background.png')} />
-      <TouchableOpacity style={styles.button} onPress={handleNavigateToPokemonList}>
+      <Pressable style={styles.button} onPress={handleNavigateToPokemonList}>
         <Text style={styles.buttonText}>Jump into Battlefield</Text>
-      </TouchableOpacity>
+      </Pressable>
       <StatusBar style="auto" />
     </View>
   );

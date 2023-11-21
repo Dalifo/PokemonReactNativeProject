@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, Image, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useGetAllCards } from '../hooks/useGetAllCards';
-
+import { getTypeColor } from '../utils/typeUtils';
 
 export default function App() {
   const navigation = useNavigation();
@@ -14,61 +14,58 @@ export default function App() {
   const { data, isFetching } = useGetAllCards();
 
   if (isFetching) {
-    return <ActivityIndicator />
+    return <ActivityIndicator />;
   }
 
-
   return (
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.goback} onPress={handleNavigateToHome}>
-          <Image source={require('../assets/arrow_back.png')} />
-        </TouchableOpacity>
-        <Image style={styles.user} source={require('../assets/user.png')} />
-        <Image
-          style={styles.backgroundpoke}
-          source={require('../assets/background.png')}
-        />
-        <Text style={styles.normaltext}>Select Your</Text>
-        <Text style={styles.boldtext}>
-          Pokemon{''}
-          <Image source={require('../assets/pokeball.png')} style={styles.pokeball} />
-        </Text>
-        <Text style={styles.pokemonnumber}>
-          {isFetching ? 'Loading...' : `${data?.length} Pokemons in your Pokedex`}
-        </Text>
-        <ScrollView style={styles.scrollview}>
-          {Array.isArray(data) ? (
-            data
-            .map((card) => (
-              <View style={styles.pokemoncard} key={card.pokedexId}>
-                <Text>
-                  {card.name.en} 
-                </Text>
-                <Text>
-                  {card.pokedexId}
-                </Text>
-                <Image
-                  source={{ uri: card.sprites.regular }} // Utilisez l'URL de l'image ici
-                  style={{ width: 100, height: 100 }} // Ajustez la taille selon vos besoins
-                />
-                <Text>
-                  {''}
-                  <Image 
-                    source={{ uri: card.types[0].image }}
-                    style={{ width: 30, height: 30 }}
-                  />
-                  { card.types[0].name }
-                </Text>
+    <View style={styles.container}>
+      <Pressable style={styles.goback} onPress={handleNavigateToHome}>
+        <Image source={require('../assets/arrow_back.png')} />
+      </Pressable>
+      <Image style={styles.user} source={require('../assets/user.png')} />
+      <Image
+        style={styles.backgroundpoke}
+        source={require('../assets/background.png')}
+      />
+      <Text style={styles.normaltext}>Select Your</Text>
+      <Text style={styles.boldtext}>
+        Pokemon{''}
+        <Image source={require('../assets/pokeball.png')} style={styles.pokeball} />
+      </Text>
+      <Text style={styles.pokemonnumber}>
+        {isFetching ? 'Loading...' : `${data?.length} Pokemons in your Pokedex`}
+      </Text>
+      <ScrollView style={styles.scrollview}>
+        {Array.isArray(data) ? (
+          data.map((card) => (
+            <View style={[
+              styles.pokemoncard,
+              { backgroundColor: getTypeColor(card.types[0].name) },
+            ]} key={card.pokedexId}>
+              <Image
+                source={{ uri: card.sprites.regular }}
+                style={styles.pokemonsprite}
+              />
+              <Text style={styles.pokemonname}>{card.name.en}</Text>
+              <View style={styles.typesContainer}>
+                {card.types.map((type, index) => (
+                  <View style={styles.type} key={index}>
+                    <Image
+                      source={{ uri: type.image }}
+                      style={styles.styleimage}
+                    />
+                    <Text>{type.name}</Text>
+                  </View>
+                ))}
               </View>
-              
-            ))
-          ) : (
-            <Text>No data available</Text>
-          )}
-          
-        </ScrollView>
-      
-      </View>
+
+            </View>
+          ))
+        ) : (
+          <Text>No data available</Text>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -81,11 +78,10 @@ const styles = StyleSheet.create({
   },
   backgroundpoke: {
     position: 'absolute',
-    top: '18%', // Utilisation de pourcentage plutôt que de valeur absolue
-    left: '-30%', // Utilisation de pourcentage plutôt que de valeur absolue
-    // zIndex: 1,
-    width: '110%', // Utilisation de pourcentage plutôt que de valeur absolue
-    height: '60%', // Utilisation de pourcentage plutôt que de valeur absolue
+    top: '18%',
+    left: '-30%',
+    width: '110%',
+    height: '60%',
   },
   goback: {
     backgroundColor: '#373737',
@@ -93,8 +89,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 9,
     position: 'absolute',
-    top: '4%', // Utilisation de pourcentage plutôt que de valeur absolue
-    left: '4%', // Utilisation de pourcentage plutôt que de valeur absolue
+    top: '4%',
+    left: '4%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -103,13 +99,12 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 9,
     position: 'absolute',
-    top: '4%', // Utilisation de pourcentage plutôt que de valeur absolue
-    left: '84%', // Utilisation de pourcentage plutôt que de valeur absolue
+    top: '4%',
+    left: '84%',
   },
   normaltext: {
-    fontSize: 35.88, // Utilisez simplement le nombre pour définir la taille de la police
-    // fontFamily: 'clash-display', // Assurez-vous que le nom de la police est correctement défini dans votre application
-    fontWeight: '300', // Utilisez une chaîne pour définir le poids de la police
+    fontSize: 35.88,
+    fontWeight: '300',
     color: '#FFFFFF',
     position: 'absolute',
     top: '16%',
@@ -125,7 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    alignContent: 'flex-start'
+    alignContent: 'flex-start',
   },
   pokeball: {
     width: 60,
@@ -149,14 +144,48 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '30%',
     left: '39%',
-    // backgroundColor: '#373737'
   },
   pokemoncard: {
     width: 374,
-    height: 299,
-    backgroundColor: '#FFFFFF',
+    height: 250,
     borderRadius: 12,
     alignSelf: 'center',
     flexDirection: 'column',
+    padding: 12,
+    overflow: 'visible',
+  },
+  pokemonname: {
+    marginTop: 'auto',
+    fontWeight: '600',
+    fontSize: 30,
+  },
+  pokemonsprite: {
+    width: 250,
+    height: 250,
+    overflow: 'visible',
+    position: 'relative',
+    top: -100,
+    right: -50,
+  },
+  typesContainer: {
+    flexDirection: 'row',
+    // justifyContent: 'space-between',
+    // marginTop: 'auto',
+  },
+  type: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginRight: 6,
+    borderRadius: 70,
+    backgroundColor: 'grey',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    opacity: 0.8,
+  },
+  styleimage: {
+    width: 20,
+    height: 20,
+    borderRadius: 100,
+    marginRight: 5,
   }
 });

@@ -61,7 +61,6 @@ export type Card = {
   height: string;
   weight: string;
   egg_groups: string[];
-
 };
 
 
@@ -74,7 +73,6 @@ export const useGetAllCards = () => {
     queryFn: ApiClient.useGetAllCards,
   });
 
-  // Filtrer les données par génération ici (génération 1 dans cet exemple)
   const filteredData = data?.filter((card) => 
   card.generation === 1 && 
   card.pokedexId !== 0 && 
