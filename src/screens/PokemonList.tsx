@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useGetAllCards } from "../hooks/useGetAllCards";
-import { getTypeColor, TypeColors } from "../utils/typeUtils";
+import { getTypeColor, getTypeImage } from "../utils/typeUtils";
 import Animated, {
   interpolate,
   useAnimatedScrollHandler,
@@ -31,6 +31,7 @@ export default function App() {
   };
 
   const handleNavigateToPokemonDetails = (pokedexId: number) => {
+    console.log({pokedexId})
     navigation.navigate("PokemonDetails", {pokedexId});
   };
   
@@ -47,6 +48,8 @@ export default function App() {
       transform: [{ rotate: `${rotate}deg` }],
     };
   });
+
+  
 
   if (isFetching) {
     return <ActivityIndicator />;
@@ -80,23 +83,29 @@ export default function App() {
       >
         {Array.isArray(data) ? (
           data.map((card) => (
-            <Pressable onPress={() => handleNavigateToPokemonDetails(card.pokedexId)}>
-            <Animated.View
-              style={[
-                styles.pokemoncard,
-                { backgroundColor: getTypeColor(card.types[0].name) },
-                animatedStyle,
-              ]}
+            <Pressable
               key={card.pokedexId}
+              onPress={() => handleNavigateToPokemonDetails(card.pokedexId)}
             >
+              <Animated.View
+                style={[
+                  styles.pokemoncard,
+                  { backgroundColor: getTypeColor(card.types[0].name) },
+                  animatedStyle,
+                ]}
+              >
+                <Image 
+                  source={getTypeImage(card.types[0].name)} 
+                  style={styles.cardbackground} 
+                />
                 <Image
                   source={{ uri: card.sprites.regular }}
                   style={styles.pokemonsprite}
                 />
                 <Text style={styles.pokemonname}>{card.name.en}</Text>
                 <View style={styles.typesContainer}>
-                  {card.types.map((type, index) => (
-                    <View style={styles.type} key={index}>
+                  {card.types.map((type) => (
+                    <View style={styles.type} key={type.name}>
                       <Image
                         source={{ uri: type.image }}
                         style={styles.styleimage}
@@ -104,8 +113,8 @@ export default function App() {
                       <Text>{type.name}</Text>
                     </View>
                   ))}
-                </View>
-              </Animated.View>
+                </View>              
+                </Animated.View>
             </Pressable>
           ))
         ) : (
@@ -136,7 +145,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 9,
     position: "absolute",
-    top: "4%",
+    top: "6%",
     left: "4%",
     justifyContent: "center",
     alignItems: "center",
@@ -146,7 +155,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 9,
     position: "absolute",
-    top: "4%",
+    top: "6%",
     left: "84%",
   },
   normaltext: {
@@ -206,6 +215,7 @@ const styles = StyleSheet.create({
     marginTop: "auto",
     fontWeight: "600",
     fontSize: 30,
+    backgroundColor: 'transparent',
   },
   pokemonsprite: {
     width: 250,
@@ -214,6 +224,7 @@ const styles = StyleSheet.create({
     position: "relative",
     top: -100,
     right: -50,
+    zIndex: 2,
   },
   typesContainer: {
     flexDirection: "row",
@@ -236,4 +247,11 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     marginRight: 5,
   },
+  cardbackground: {
+    zIndex: 1,
+    position: "absolute",
+    top: 20,
+    width: '50%',
+    height:'70%',
+  }
 });
