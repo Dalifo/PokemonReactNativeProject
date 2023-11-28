@@ -1,9 +1,8 @@
-// Navigation.js
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
-import HomeScreen from '../screens/Home'; // Assuming your Home screen is in the screens folder
+import HomeScreen from '../screens/Home';
 import PokemonList from '../screens/PokemonList';
 import PokemonDetails from '../screens/PokemonDetails';
 
