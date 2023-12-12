@@ -23,6 +23,7 @@ export default function App() {
   const [activeSlide, setActiveSlide] = useState<number>(1);
   const [previousActive, setPreviousActive] = useState<number>(0);
   const [nextActive, setNextActive] = useState<number | undefined>(2);
+  const [previousPreviousActive, setPreviousPreviousActive] = useState<number | undefined>(3);
 
 
   const handleNavigateToHome = () => {
@@ -52,15 +53,17 @@ export default function App() {
   }
 
   const handleSnapToItem = (index: number) => {
-    setActiveSlide(index);
+    setActiveSlide(1);
     setPreviousActive(index - 1);
     setNextActive(index + 1 < (data?.length ?? 0) ? index + 1 : undefined);
+    setPreviousPreviousActive(index - 2);
   };
   
 
   console.log("Active index:", activeSlide);
   console.log("Previous index:", previousActive ?? null);
   console.log("Next index:", nextActive ?? null);
+  console.log("Previous previous index:", previousPreviousActive ?? null);
 
   return (
     <View style={styles.container}>
@@ -75,10 +78,12 @@ export default function App() {
       <Text style={styles.normaltext}>Select Your</Text>
       <Text style={styles.boldtext}>
         Pokèmon{""}
-        <Image
-          source={require("../assets/pokeball.png")}
-          style={styles.pokeball}
-        />
+        <View style={styles.pokebalView}>
+          <Image
+            source={require("../assets/pokeball.png")}
+            style={styles.pokeball}
+          />
+        </View>
       </Text>
       <Text style={styles.pokemonnumber}>
         {isFetching ? "Loading..." : `${data?.length} Pokemons in your Pokedex`}
@@ -89,43 +94,43 @@ export default function App() {
           <Pressable
             onPress={() => handleNavigateToPokemonDetails(item.pokedexId)}
           >
-         <View
-            style={[
-              styles.pokemoncard,
-              { 
-                backgroundColor: getTypeColor(item.types[0].name),
-                opacity: 1,
-                zIndex: activeSlide === index ? 2 : 1,
-                
-                transform: [
-                  { rotate: index === previousActive ? "15deg" : (index === nextActive ? "-15deg" : "0deg") },
-                  { scale: index === activeSlide ? 1 : 0.9 },
-                  { translateX: index === previousActive ? 50 : (index === nextActive ? 50 : 0) },
-                ],
-              },
-            ]}
-          >
-            <Image 
-              source={getTypeImage(item.types[0].name)} 
-              style={styles.cardbackground} 
-            />
-            <Image
-              source={{ uri: item.sprites.regular }}
-              style={styles.pokemonsprite}
-            />
-            <Text style={styles.pokemonname}>{item.name.en}</Text>
-            <View style={styles.typesContainer}>
-              {item.types.map((type) => (
-                <View style={styles.type} key={type.name}>
-                  <Image
-                    source={{ uri: type.image }}
-                    style={styles.styleimage}
-                  />
-                  <Text style={styles.typeName}>{type.name}</Text>
-                </View>
-              ))}
-            </View>              
-          </View>
+            <View
+              style={[
+                styles.pokemoncard,
+                { 
+                  backgroundColor: getTypeColor(item.types[0].name),
+                  opacity: index === previousPreviousActive ? 0 : 1,
+                  zIndex: activeSlide === index ? 2 : 1,
+                  
+                  transform: [
+                    { rotate: index === previousActive ? "15deg" : (index === nextActive ? "-15deg" : "0deg") },
+                    { scale: index === activeSlide ? 1 : 0.9 },
+                    { translateX: index === previousActive ? 50 : (index === nextActive ? 50 : 0) },
+                  ],
+                },
+              ]}
+            >
+              <Image 
+                source={getTypeImage(item.types[0].name)} 
+                style={styles.cardbackground} 
+              />
+              <Image
+                source={{ uri: item.sprites.regular }}
+                style={styles.pokemonsprite}
+              />
+              <Text style={styles.pokemonname}>{item.name.en}</Text>
+              <View style={styles.typesContainer}>
+                {item.types.map((type) => (
+                  <View style={styles.type} key={type.name}>
+                    <Image
+                      source={{ uri: type.image }}
+                      style={styles.styleimage}
+                    />
+                    <Text style={styles.typeName}>{type.name}</Text>
+                  </View>
+                ))}
+              </View>              
+            </View>
 
 
           </Pressable>
@@ -182,7 +187,8 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     position: "absolute",
     top: "6%",
-    left: "84%",
+    left: "69%",
+    zIndex: 5,
   },
   normaltext: {
     fontSize: 35.88,
@@ -201,15 +207,22 @@ const styles = StyleSheet.create({
     top: "20%",
     left: "4%",
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    alignContent: "flex-start",
+    alignItems: "flex-end",
+    alignContent: 'flex-end',
+    justifyContent: "flex-end",
     fontFamily: 'ClashDisplaySemibold',
+    // backgroundColor: "blue"
   },
   pokeball: {
-    width: 60,
-    height: 60,
+    width: '120%',
+    height: '120%',
+    // backgroundColor: 'green',
   },
+  pokebalView: {
+    width: 50,
+    height: 50,
+    position: "relative",
+  },  
   pokemonnumber: {
     fontSize: 20,
     lineHeight: 28,
@@ -218,7 +231,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "4%",
     top: "80%",
-    width: "35%",
+    width: "32%",
     fontFamily: 'ClashDisplayRegular',
   },  
   pokemoncard: {
