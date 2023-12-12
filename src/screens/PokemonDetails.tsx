@@ -1,71 +1,179 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, Image, Pressable, ActivityIndicator, ImageBackground, SafeAreaView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  Pressable,
+  ActivityIndicator,
+  ImageBackground,
+  SafeAreaView,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useGetCardById } from "../hooks/useGetCardById";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import { getTypeColor, getTypeImage} from "../utils/typeUtils";
-import { LinearGradient } from 'expo-linear-gradient';
-import { Modal } from 'react-native';
-import { useGetAllCards } from "../hooks/useGetAllCards";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useGetCardById } from "../hooks/useGetCardById";
+import { useGetAllCards } from "../hooks/useGetAllCards";
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts } from "expo-font";
+import { getTypeImage, getTypeColor, getTypeColorSecondary } from "../utils/typeUtils";
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, useAnimatedGestureHandler, withSpring } from 'react-native-reanimated';
+
 
 type RootStackParamList = {
   PokemonDetails: { pokedexId: number } | undefined;
+  Battleground: { pokedexId: number };
+};
+
+type GestureContext = {
+  startY: number;
 };
 
 export default function App() {
-    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-    const route = useRoute();
-    const { pokedexId } = route.params as { pokedexId: number }
-    const { data, isFetching } = useGetCardById(pokedexId);
-    const [isModalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const route = useRoute();
+  const { pokedexId } = route.params as { pokedexId: number };
+  const { data, isFetching } = useGetCardById(pokedexId);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [swipeHandled, setSwipeHandled] = useState<boolean>(false);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
 
-    const handleNavigateToPokemonList = () => {
-      navigation.navigate("PokemonList" as never);
-    };
+  const handleNavigateToPokemonList = () => {
+    navigation.navigate("PokemonList" as never);
+  };
 
-    const handleOpenModal = () => {
-      setModalVisible(true);
+  const handleOpenModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+  };
+
+  const { data: allCards } = useGetAllCards();
+
+  const handleNavigateToPreviousPokemon = () => {
+    if (allCards) {
+      const currentIndex = allCards.findIndex((card) => card.pokedexId === pokedexId);
+      const PreviousIndex = (currentIndex - 1 + allCards.length) % allCards.length;
+      const PreviousPokemonId = allCards[PreviousIndex].pokedexId;
+
+      const PreviousPokemonParams: { pokedexId: number } = { pokedexId: PreviousPokemonId };
+      navigation.navigate("PokemonDetails", PreviousPokemonParams);
+    }
+  };
+
+  const handleNavigateToNextPokemon = () => {
+    if (allCards) {
+      const currentIndex = allCards.findIndex((card) => card.pokedexId === pokedexId);
+      const NextIndex = (currentIndex + 1 + allCards.length) % allCards.length;
+      const NextPokemonId = allCards[NextIndex].pokedexId;
+
+      const NextPokemonParams: { pokedexId: number } = { pokedexId: NextPokemonId };
+      navigation.navigate("PokemonDetails", NextPokemonParams);
+    }
+  };
+
+  const onSwipeLeft = () => {
+    if (!swipeHandled && allCards) {
+      const currentIndex = allCards.findIndex((card) => card.pokedexId === pokedexId);
+      const NextIndex = (currentIndex + 1 + allCards.length) % allCards.length;
+      const NextPokemonId = allCards[NextIndex].pokedexId;
+
+      const NextPokemonParams: { pokedexId: number } = { pokedexId: NextPokemonId };
+      navigation.navigate("PokemonDetails", NextPokemonParams);
+      
+
+      setSwipeHandled(true);
+    }
+  };
+
+  const onSwipeRight = () => {
+    if (!swipeHandled && allCards) {
+      const currentIndex = allCards.findIndex((card) => card.pokedexId === pokedexId);
+      const PreviousIndex = (currentIndex - 1 + allCards.length) % allCards.length;
+      const PreviousPokemonId = allCards[PreviousIndex].pokedexId;
+
+      const PreviousPokemonParams: { pokedexId: number } = { pokedexId: PreviousPokemonId };
+      navigation.navigate("PokemonDetails", PreviousPokemonParams);
+      
+
+      setSwipeHandled(true);
+    }
+  };
+
+  const resetSwipeHandled = () => {
+    setSwipeHandled(false);
+  };
+
+  const pokeballStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: translateY.value }],
     };
+  });
+
+  const spriteStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+    };
+  });
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_, ctx: GestureContext) => {
+      ctx.startY = translateY.value;
+    },
+    onActive: (event, context) => {
+      translateY.value = Math.max(Math.min(context.startY + event.translationY, 0), -70);
+      console.log('Pokeball Position Y:', translateY.value);
+    },
+    onEnd: () => {
+      if (translateY.value != -70){
+      translateY.value = 0;
+    }
+    }
+  });
   
-    const handleCloseModal = () => {
-      setModalVisible(false);
-    };
-
-    const { data: allCards } = useGetAllCards();
-
-    // const findCurrentPokemonIndex = () => {
-    //   return allCards.findIndex(card => card.pokedexId === pokedexId);
-    // };
-
-    const handleNavigateToPreviousPokemon = () => {
-      if (allCards) {
-        const currentIndex = allCards.findIndex(card => card.pokedexId === pokedexId);
-        console.log(currentIndex)
-        const PreviousIndex = (currentIndex - 1 + allCards.length) % allCards.length;
-        const PreviousPokemonId = allCards[PreviousIndex].pokedexId;
-    
-        // Utilisez le type approprié attendu par navigation.navigate
-        const PreviousPokemonParams: { pokedexId: number } = { pokedexId: PreviousPokemonId };
-        console.log(PreviousPokemonParams)
-        navigation.navigate("PokemonDetails", PreviousPokemonParams);
-      }
-    };   
-
-    const handleNavigateToNextPokemon = () => {
-      if (allCards) {
-        const currentIndex = allCards.findIndex(card => card.pokedexId === pokedexId);
-        const NextIndex = (currentIndex + 1 + allCards.length) % allCards.length;
-        const NextPokemonId = allCards[NextIndex].pokedexId;
-    
-        // Utilisez le type approprié attendu par navigation.navigate
-        const NextPokemonParams: { pokedexId: number } = { pokedexId: NextPokemonId };
-        navigation.navigate("PokemonDetails", NextPokemonParams);
-      }
-    };  
-
+  const navigateToBattleground = (pokedexId?: number): void => {
+    console.log('Navigating to Battleground with pokedexId:', pokedexId);
+    if (pokedexId !== undefined) {
+      navigation.navigate("Battleground", { pokedexId });
+        setTimeout(() => {
+        translateY.value = 0;
+      }, 1000);
+    }
+  };
   
+  
+
+  const [fontsLoaded] = useFonts({
+    ClashDisplaySemibold: require('../assets/fonts/ClashDisplay-Semibold.otf'),
+    ClashDisplayLight: require('../assets/fonts/ClashDisplay-Light.otf'),
+    ClashDisplayBold: require('../assets/fonts/ClashDisplay-Bold.otf'),
+    ClashDisplayRegular: require('../assets/fonts/ClashDisplay-Regular.otf'),
+    ClashDisplayMedium: require('../assets/fonts/ClashDisplay-Medium.otf'),
+  });
+  if (!fontsLoaded) {
+    return null;
+  }
+    
     return (
+      <PanGestureHandler
+      onGestureEvent={({ nativeEvent }) => {
+        if (nativeEvent.translationX < -50) {
+          onSwipeLeft();
+        } else if (nativeEvent.translationX > 50) {
+          onSwipeRight();
+        }
+      }}
+      onHandlerStateChange={({ nativeEvent }) => {
+        if (nativeEvent.state === State.END) {
+          resetSwipeHandled();
+        }
+      }}
+    >
       <SafeAreaView style={styles.container}>
         <Pressable style={styles.goback} onPress={handleNavigateToPokemonList}>
           <Image source={require("../assets/arrow_back.png")} />
@@ -90,54 +198,77 @@ export default function App() {
                 source={getTypeImage(data.types[0].name)} 
                 style={styles.cardbackground} 
               />
-            <Image
-                style={styles.sprite}
-                source={{ uri: data.sprites.regular }}
-              />
+             <Animated.Image
+            style={[styles.sprite, spriteStyle]}
+            source={{ uri: data.sprites.regular }}
+            onLoad={() => {
+              opacity.value = withSpring(1, { damping: 100, stiffness: 10 });
+            }}
+          />
             <View style={styles.details}>
               <Text style={styles.title}>{data.name.en}</Text>
               <Text style={styles.backtitle}>{data.name.en}</Text>
               <View style={styles.typesContainer}>
                 {data.types.map((type) => (
-                  <View style={styles.type} key={type.name}>
+                  <View style={[styles.type,
+                    { backgroundColor: getTypeColor(type.name),
+                      borderColor: getTypeColorSecondary(type.name),
+                     },                  
+                  ]} key={type.name}>
                     <Image
                       source={{ uri: type.image }}
                       style={styles.styleimage}
                     />
-                    <Text>{type.name}</Text>
+                    <Text style={[styles.typeName,
+                        {color: getTypeColorSecondary(type.name),}
+                    ]}>{type.name}</Text>
                   </View>
                 ))}
               </View>
               <Text style={styles.description}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu maximus dolor. In vitae massa eget libero ullamcorper finibus a a lacus. Integer pharetra quam metus.
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eu maximus dolor. 
+                In vitae massa eget libero ullamcorper finibus a a lacus. Integer pharetra quam metus.
               </Text>
               <TouchableOpacity>
                 <Text style={styles.viewstats} onPress={handleOpenModal}>
                   View Stats
                 </Text>
               </TouchableOpacity>
-              <Pressable style={styles.vectorRight} onPress={handleNavigateToNextPokemon}>
+              <View style={styles.vectorRight} >
                 <Image source={require('../assets/vectorRight.png')} />
-                <Image source={require('../assets/arrowRight.png')} style={styles.arrowRight} />
-              </Pressable>
-              <Pressable style={styles.vectorLeft} onPress={handleNavigateToPreviousPokemon}>
-                <Image source={require('../assets/vectorLeft.png')} />
-                <Image source={require('../assets/arrowLeft.png')} style={styles.arrowLeft} />
-              </Pressable>
-
-              <View style={styles.barToSelectPokemon}>
-                <Image
-                  source={require('../assets/barToSelectPokemon.png')}
-                />
-                <Image
-                  source={require('../assets/arrowsUp.png')}
-                  style={styles.arrowsUp}
-                />
-                <Image
-                  source={require('../assets/pokeball.png')}
-                  style={styles.pokeball}
-                />
+                <Pressable onPress={handleNavigateToNextPokemon} style={styles.arrowRight} >
+                  <Image source={require('../assets/arrowRight.png')} />
+                </Pressable>
               </View>
+              <View style={styles.vectorLeft} >
+                <Image source={require('../assets/vectorLeft.png')} />
+                <Pressable style={styles.arrowLeft} onPress={handleNavigateToPreviousPokemon}>
+                  <Image source={require('../assets/arrowLeft.png')} />
+                </Pressable>
+              </View>
+
+              <PanGestureHandler 
+              onGestureEvent={gestureHandler}
+              onHandlerStateChange={({ nativeEvent }) => {
+                const { translationY } = nativeEvent;
+                if (data && translationY <= -70) {
+                  navigateToBattleground(data.pokedexId);
+                }
+              }}
+              >
+              <Animated.View style={styles.barToSelectPokemon}>
+                  <Image source={require('../assets/barToSelectPokemon.png')} />
+                  <Image source={require('../assets/arrowsUp.png')} style={styles.arrowsUp} />
+                  <View
+                    style={styles.pokeballButton}
+                  >
+                    <Animated.Image
+                      source={require('../assets/pokeball.png')}
+                      style={[styles.pokeball, pokeballStyle]}
+                    />
+                  </View>
+                </Animated.View>
+              </PanGestureHandler>
 
               <Text style={styles.textToSelect}>Swipe up to select</Text>
 
@@ -148,13 +279,25 @@ export default function App() {
                 onRequestClose={handleCloseModal}
               >
                 <View style={styles.modalContainer}>
-                  <View style={styles.modalCenter}>
-                    {/* Contenu de votre modal */}
-                    <Text style={styles.modalText}>🚧 Coming Soon... 🚧</Text>
-                    {/* Ajoutez un bouton pour fermer la modal */}
-                    <TouchableOpacity  onPress={handleCloseModal} style={styles.closeModal}>
-                      <Image source={require('../assets/close.png')} style={styles.cross}></Image>
-                    </TouchableOpacity>
+                  <View style={[styles.modalCenter, {borderColor: getTypeColor(data.types[0].name)}]}>
+                    <View style={styles.modalCenterInner}>
+                      <Pressable  onPress={handleCloseModal} style={styles.closeModal}>
+                        <Image source={require('../assets/close.png')} style={styles.cross}></Image>
+                      </Pressable>
+                      <Text style={[styles.modalTitle, {color: getTypeColor(data.types[0].name)}]}>Stats</Text>
+                      <View>
+                      {data.stats && (
+                        <View style={styles.allStats}>
+                          {Object.entries(data.stats).map(([statName, statValue], statIndex) => (
+                            <View key={statIndex} style={styles.statContainer}>
+                              <Text style={[styles.statText, {color: getTypeColorSecondary(data.types[0].name)}]}>{statName}</Text>
+                              <Text style={[styles.statText, {color: getTypeColorSecondary(data.types[0].name)}]}>{statValue}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                      </View>
+                    </View>
                   </View>
                 </View>
               </Modal>
@@ -165,10 +308,9 @@ export default function App() {
           <Text>No data available</Text>
         )}
       </SafeAreaView>
+    </PanGestureHandler>
     );
   }
-  
-
 
 const styles = StyleSheet.create({
   sprite: {
@@ -179,15 +321,14 @@ const styles = StyleSheet.create({
     height: '45%',
   },
   title: {
-    // position: "absolute",
     top: '45%',
     zIndex: 2,
-    width: 182,
     height: 44,
     fontSize: 35,
     color: "white",
     fontWeight: '600',
     textAlign: "center",
+    fontFamily: 'ClashDisplaySemibold',
   },
   container: {
     flex: 1,
@@ -242,16 +383,15 @@ const styles = StyleSheet.create({
     width: '170%',
     height: 123,
     fontSize: 100,
-    color: "#1B1B1B",
+    color: "#232323",
     fontWeight: "700",
     textAlign: "center",
+    fontFamily: 'ClashDisplayBold',
   },
   typesContainer: {
     marginTop: '30%',
     flexDirection: "row",
     zIndex: 3,
-    // justifyContent: 'space-between',
-    // marginTop: 'auto',
   },
   type: {
     alignItems: "center",
@@ -261,6 +401,12 @@ const styles = StyleSheet.create({
     backgroundColor: "grey",
     paddingHorizontal: 10,
     paddingVertical: 6,
+    borderWidth: 1, 
+    borderColor: "black", 
+    borderStyle: 'solid',
+  },
+  typeName: {
+    fontFamily: 'ClashDisplayMedium',
   },
   styleimage: {
     width: 20,
@@ -275,6 +421,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: '400',
     textAlign: 'center',
+    fontFamily: 'ClashDisplayRegular',
   },
   viewstats: {
     color: '#FFB444',
@@ -282,7 +429,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     fontWeight: '500',
-    marginTop: '30%',
+    marginTop: '5%',
+    fontFamily: 'ClashDisplayMedium',
   },
   details: {
     height: 230,
@@ -297,12 +445,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  
   cardbackground: {
     position: "absolute",
     top: 20,
     width: 400,
     height: 400,
+    borderRadius: 50,
   },
   vectorRight: {
     position: 'absolute',
@@ -325,53 +473,98 @@ const styles = StyleSheet.create({
     bottom: '50%',
   },
   barToSelectPokemon: {
-    bottom: '30%',
+    bottom: '-10%',
   },
   textToSelect: {
     color: 'white',
-    bottom: '35%',
+    fontFamily: 'ClashDisplayMedium',
+    bottom: '-5%'
   },
   arrowsUp: {
     position: 'absolute',
-    bottom: '40%',
+    bottom: '42%',
     left: '9%',
     width: '5%',
     height: '50%',
   },
   pokeball: {
+    width: 80,
+    height: 80,
+  },
+  pokeballButton: {
     position: 'absolute',
-    bottom: '10%',
-    left: '2.8%',
-    width: 70,
-    height: 70,
+    bottom: '6%',
+    left: '1.5%',
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalText: {
-    color: 'black',
-    fontSize: 24,
-  },
   modalCenter: {
+    position: 'absolute',
+    bottom: '30%',
     backgroundColor: 'white',
-    height: '50%',
+    opacity: 0.95,
+    height: '23%',
     width: '80%',
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 2,
+  },  
+  modalCenterInner: {
+    position: 'absolute',
+    height: '100%',
+    width: '100%',
+    borderWidth: 2,
+    borderRadius: 16,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontFamily: 'ClashDisplayMedium',
+  },
+  modalStats: {
+    fontFamily: 'ClashDisplayMedium',
+    fontSize: 18,
   },
   closeModal: {
-    width: 300,
-    height: 300,
+    width: '100%',
+    height: '100%',
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: '2%',
+    left: '97%',
+    zIndex: 2,
   },
   cross: {
-    width: '5%',
-    height: '5%',
-  }
-  
+    width: '10%',
+    height: '10%',
+  },
+  usernameBar: {
+    height: 25,
+    width: 10,
+    borderRadius: 8,
+    marginLeft: 10,
+    overflow: 'hidden',
+    marginRight: -8,
+  },
+  allStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: '100%',
+    justifyContent: 'space-between'
+  },
+  statContainer: {
+    marginBottom: 5,
+    left: '5%',
+    width: '30%',
+    alignItems: 'center'
+  },
+  statText: {
+    fontFamily: 'ClashDisplayMedium',
+    fontSize: 18,
+    marginBottom: 5
+  },
 });

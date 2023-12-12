@@ -1,4 +1,3 @@
-import React from "react";
 import {
   StyleSheet,
   Text,
@@ -7,53 +6,61 @@ import {
   Pressable,
   ActivityIndicator,
 } from "react-native";
+import Carousel from 'react-native-snap-carousel';
 import { useNavigation } from "@react-navigation/native";
 import { useGetAllCards } from "../hooks/useGetAllCards";
 import { getTypeColor, getTypeImage } from "../utils/typeUtils";
-import Animated, {
-  interpolate,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useFonts } from "expo-font";
+import { useState } from "react";
 
 type RootStackParamList = {
   PokemonDetails: { pokedexId: number } | undefined;
 };
 
 export default function App() {
-  const animatedScrollY = useSharedValue(0);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const [activeSlide, setActiveSlide] = useState<number>(1);
+  const [previousActive, setPreviousActive] = useState<number>(0);
+  const [nextActive, setNextActive] = useState<number | undefined>(2);
+
 
   const handleNavigateToHome = () => {
     navigation.navigate("Home" as never);
   };
 
   const handleNavigateToPokemonDetails = (pokedexId: number) => {
-    console.log({pokedexId})
-    navigation.navigate("PokemonDetails", {pokedexId});
+    console.log({ pokedexId });
+    navigation.navigate("PokemonDetails", { pokedexId });
   };
-  
+
   const { data, isFetching } = useGetAllCards();
 
-  const scrollHandler = useAnimatedScrollHandler((event) => {
-    animatedScrollY.value = event.contentOffset.y;
+  const [fontsLoaded] = useFonts({
+    ClashDisplaySemibold: require('../assets/fonts/ClashDisplay-Semibold.otf'),
+    ClashDisplayLight: require('../assets/fonts/ClashDisplay-Light.otf'),
+    ClashDisplayRegular: require('../assets/fonts/ClashDisplay-Regular.otf'),
+    ClashDisplayMedium: require('../assets/fonts/ClashDisplay-Medium.otf'),
   });
 
-  const animatedStyle = useAnimatedStyle(() => {
-    console.log(animatedScrollY.value);
-    const rotate = interpolate(animatedScrollY.value, [0, 100], [0, 5]);
-    return {
-      transform: [{ rotate: `${rotate}deg` }],
-    };
-  });
-
-  
+  if (!fontsLoaded) {
+    return null;
+  }
 
   if (isFetching) {
     return <ActivityIndicator />;
   }
+
+  const handleSnapToItem = (index: number) => {
+    setActiveSlide(index);
+    setPreviousActive(index - 1);
+    setNextActive(index + 1 < (data?.length ?? 0) ? index + 1 : undefined);
+  };
+  
+
+  console.log("Active index:", activeSlide);
+  console.log("Previous index:", previousActive ?? null);
+  console.log("Next index:", nextActive ?? null);
 
   return (
     <View style={styles.container}>
@@ -67,7 +74,7 @@ export default function App() {
       />
       <Text style={styles.normaltext}>Select Your</Text>
       <Text style={styles.boldtext}>
-        Pokemon{""}
+        Pokèmon{""}
         <Image
           source={require("../assets/pokeball.png")}
           style={styles.pokeball}
@@ -76,51 +83,68 @@ export default function App() {
       <Text style={styles.pokemonnumber}>
         {isFetching ? "Loading..." : `${data?.length} Pokemons in your Pokedex`}
       </Text>
-      <Animated.ScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        style={styles.scrollview}
-      >
-        {Array.isArray(data) ? (
-          data.map((card) => (
-            <Pressable
-              key={card.pokedexId}
-              onPress={() => handleNavigateToPokemonDetails(card.pokedexId)}
-            >
-              <Animated.View
-                style={[
-                  styles.pokemoncard,
-                  { backgroundColor: getTypeColor(card.types[0].name) },
-                  animatedStyle,
-                ]}
-              >
-                <Image 
-                  source={getTypeImage(card.types[0].name)} 
-                  style={styles.cardbackground} 
-                />
-                <Image
-                  source={{ uri: card.sprites.regular }}
-                  style={styles.pokemonsprite}
-                />
-                <Text style={styles.pokemonname}>{card.name.en}</Text>
-                <View style={styles.typesContainer}>
-                  {card.types.map((type) => (
-                    <View style={styles.type} key={type.name}>
-                      <Image
-                        source={{ uri: type.image }}
-                        style={styles.styleimage}
-                      />
-                      <Text>{type.name}</Text>
-                    </View>
-                  ))}
-                </View>              
-                </Animated.View>
-            </Pressable>
-          ))
-        ) : (
-          <Text>No data available</Text>
+      <Carousel
+        data={data ?? []}
+        renderItem={({ item, index }) => (
+          <Pressable
+            onPress={() => handleNavigateToPokemonDetails(item.pokedexId)}
+          >
+         <View
+            style={[
+              styles.pokemoncard,
+              { 
+                backgroundColor: getTypeColor(item.types[0].name),
+                opacity: 1,
+                zIndex: activeSlide === index ? 2 : 1,
+                
+                transform: [
+                  { rotate: index === previousActive ? "15deg" : (index === nextActive ? "-15deg" : "0deg") },
+                  { scale: index === activeSlide ? 1 : 0.9 },
+                  { translateX: index === previousActive ? 50 : (index === nextActive ? 50 : 0) },
+                ],
+              },
+            ]}
+          >
+            <Image 
+              source={getTypeImage(item.types[0].name)} 
+              style={styles.cardbackground} 
+            />
+            <Image
+              source={{ uri: item.sprites.regular }}
+              style={styles.pokemonsprite}
+            />
+            <Text style={styles.pokemonname}>{item.name.en}</Text>
+            <View style={styles.typesContainer}>
+              {item.types.map((type) => (
+                <View style={styles.type} key={type.name}>
+                  <Image
+                    source={{ uri: type.image }}
+                    style={styles.styleimage}
+                  />
+                  <Text style={styles.typeName}>{type.name}</Text>
+                </View>
+              ))}
+            </View>              
+          </View>
+
+
+          </Pressable>
         )}
-      </Animated.ScrollView>
+        sliderHeight={400}
+        itemHeight={250}
+        firstItem={1}
+        vertical
+        // layout="default"
+        activeSlideAlignment="end"
+        inactiveSlideOpacity={1}
+        
+        containerCustomStyle={{ 
+          left: '25%',
+          top: '32%',
+          overflow: 'visible'
+        }}
+        onSnapToItem={handleSnapToItem}
+        />
     </View>
   );
 }
@@ -131,7 +155,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     alignItems: "center",
     justifyContent: "center",
+    width: "120%",
   },
+  
   backgroundpoke: {
     position: "absolute",
     top: "18%",
@@ -165,18 +191,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: "16%",
     left: "4%",
+    fontFamily: 'ClashDisplayLight'
   },
   boldtext: {
     fontSize: 47.83,
     fontWeight: "600",
     color: "#FFFFFF",
     position: "absolute",
-    top: "21%",
+    top: "20%",
     left: "4%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     alignContent: "flex-start",
+    fontFamily: 'ClashDisplaySemibold',
   },
   pokeball: {
     width: 60,
@@ -191,17 +219,8 @@ const styles = StyleSheet.create({
     left: "4%",
     top: "80%",
     width: "35%",
-  },
-  scrollview: {
-    width: "100%",
-    height: "80%",
-    color: "#FFFFFF",
-    zIndex: 2,
-    position: "absolute",
-    top: "30%",
-    left: "39%",
-    overflow: 'visible'
-  },
+    fontFamily: 'ClashDisplayRegular',
+  },  
   pokemoncard: {
     width: 374,
     height: 250,
@@ -216,6 +235,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 30,
     backgroundColor: 'transparent',
+    fontFamily: 'ClashDisplaySemibold',
   },
   pokemonsprite: {
     width: 250,
@@ -228,8 +248,6 @@ const styles = StyleSheet.create({
   },
   typesContainer: {
     flexDirection: "row",
-    // justifyContent: 'space-between',
-    // marginTop: 'auto',
   },
   type: {
     alignItems: "center",
@@ -240,6 +258,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     opacity: 0.8,
+  },
+  typeName: {
+    fontFamily: 'ClashDisplayMedium',
   },
   styleimage: {
     width: 20,

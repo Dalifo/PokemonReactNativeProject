@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/Home';
 import PokemonList from '../screens/PokemonList';
 import PokemonDetails from '../screens/PokemonDetails';
+import Battleground from '../screens/Battleground'
 
 const Stack = createStackNavigator();
 
@@ -32,6 +33,14 @@ function Navigation() {
           component={PokemonDetails} 
           options={{
             title: 'Pokemon Details',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="Battleground"
+          component={Battleground} 
+          options={{
+            title: 'Battleground',
             headerShown: false,
           }}
         />
