@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Image, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 
 export default function App() {
   const navigation = useNavigation();
@@ -8,6 +9,13 @@ export default function App() {
   const handleNavigateToPokemonList = () => {
     navigation.navigate('PokemonList' as never);
   };
+
+  const [fontsLoaded] = useFonts({
+    ClashDisplayBold: require('../assets/fonts/ClashDisplay-Bold.otf'),
+  });
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -54,11 +62,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
-    top: 650,
+    top: '82%',
   },
   buttonText: {
     color: 'white',
     fontSize: 24,
     fontWeight: '500',
+    fontFamily: 'ClashDisplayBold',
   }
 });
