@@ -8,21 +8,28 @@ Assurez-vous de posséder l'application Expo Go installée sur votre smartphone.
 ## Installation
 1. Clonez ce dépôt en utilisant la commande suivante dans votre terminal :
 
+```
 git clone https://github.com/Dalifo/PokemonReactNativeProject.git
+```
 
 2. Accédez au répertoire du projet :
 
+```
 cd PokemonReactNativeProject
-
+```
 
 3. Installez les dépendances du projet en exécutant la commande :
 
+```
 npm install
+```
 
 ## Lancement de l'application
 Une fois que toutes les dépendances ont été installées avec succès, vous pouvez lancer l'application en utilisant la commande :
 
+```
 npm run start
+```
 
 ## Connexion à l'application
 1. Après avoir lancé l'application, vous verrez un QR code généré dans votre terminal et une interface dans votre navigateur.
